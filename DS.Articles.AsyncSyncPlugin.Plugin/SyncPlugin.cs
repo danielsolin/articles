@@ -13,6 +13,7 @@ namespace DS.Articles.AsyncSyncPlugin.Plugin
     {
         public void Execute(IServiceProvider serviceProvider)
         {
+            // Define the URLs to be processed by the Azure Function
             var urls = new[]
             {
                 "https://example.com/api/getdata1",
@@ -20,6 +21,7 @@ namespace DS.Articles.AsyncSyncPlugin.Plugin
                 "https://example.com/api/getdata3"
             };
 
+            // Prepare the payload to send to the Azure Function
             var payload = new
             {
                 urls
@@ -32,10 +34,11 @@ namespace DS.Articles.AsyncSyncPlugin.Plugin
             using (var client = new HttpClient())
             {
                 client.DefaultRequestHeaders.UserAgent
-                    .ParseAdd("Plugin-Agent/1.0");
+                    .ParseAdd("DS-Agent/1.0");
 
                 try
                 {
+                    // Send the payload to the Azure Function
                     var response = client.PostAsync(
                         "http://localhost:7071/api/FanOut", content)
                         .GetAwaiter().GetResult();
@@ -48,6 +51,7 @@ namespace DS.Articles.AsyncSyncPlugin.Plugin
                         );
                     }
 
+                    // Read and parse the response from the Azure Function
                     var resultJson = response.Content
                         .ReadAsStringAsync().GetAwaiter().GetResult();
 
@@ -59,7 +63,13 @@ namespace DS.Articles.AsyncSyncPlugin.Plugin
                     {
                         var results = jResults.Select(x => x.ToString())
                             .ToArray();
-                        // Process results as needed
+
+                        // Log or process the results as needed
+                        foreach (var result in results)
+                        {
+                            // Example: Log each result (replace with actual logic)
+                            Console.WriteLine(result);
+                        }
                     }
                 }
                 catch (Exception ex)
