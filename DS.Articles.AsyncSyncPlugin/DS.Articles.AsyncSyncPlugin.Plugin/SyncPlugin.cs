@@ -40,7 +40,7 @@ namespace DS.Articles.AsyncSyncPlugin.Plugin
                 {
                     // Send the payload to the Azure Function
                     var response = client.PostAsync(
-                        "http://localhost:7071/api/FanOut", content)
+                        "http://localhost:1234/AsyncFunction", content)
                         .GetAwaiter().GetResult();
 
                     if (!response.IsSuccessStatusCode)

@@ -10,7 +10,7 @@ approaches may appear to work in development or isolated cases, but they often
 result in unpredictable behavior — such as deadlocks, thread aborts, or
 context corruption — especially under load.
 
-Because all plugin code must be **synchronous** and complete within strict
+Because all plugin code must be **synchronous** and complete within its
 execution time limits, scenarios that would benefit from parallelism — like
 making multiple HTTP calls simultaneously — become difficult or unsafe to
 implement directly in the plugin.
@@ -27,8 +27,6 @@ with normal logic.
 > function itself performs the async fan-out and waits for all tasks to complete
 > — thus delivering parallelism without violating plugin constraints.
 
----
-
 ## Plugin Code (SyncPlugin.cs)
 
 The plugin gathers a list of URLs, serializes them to JSON, sends them to the
@@ -37,6 +35,7 @@ Azure Function, and synchronously waits for the combined result.
 ```csharp
 public void Execute(IServiceProvider serviceProvider)
 {
+    // Define the URLs to be processed by the Azure Function
     var urls = new[]
     {
         "https://example.com/api/getdata1",
@@ -44,45 +43,61 @@ public void Execute(IServiceProvider serviceProvider)
         "https://example.com/api/getdata3"
     };
 
-    var payload = new { urls };
+    // Prepare the payload to send to the Azure Function
+    var payload = new
+    {
+        urls
+    };
+
     var json = JsonConvert.SerializeObject(payload);
-    var content = new StringContent(json, Encoding.UTF8, "application/json");
+    var content = new StringContent(
+        json, Encoding.UTF8, "application/json");
 
     using (var client = new HttpClient())
     {
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("DS-Agent/1.0");
+        client.DefaultRequestHeaders.UserAgent
+            .ParseAdd("DS-Agent/1.0");
 
         try
         {
-            var response = client.PostAsync("http://localhost:7071/api/FanOut",
-                content).GetAwaiter().GetResult();
+            // Send the payload to the Azure Function
+            var response = client.PostAsync(
+                "http://localhost:1234/AsyncFunction", content)
+                .GetAwaiter().GetResult();
 
             if (!response.IsSuccessStatusCode)
             {
                 throw new InvalidPluginExecutionException(
-                    $"Function call failed with status code: {response.StatusCode}");
+                    $"Function call failed with status code: " +
+                    $"{response.StatusCode}"
+                );
             }
 
-            var resultJson = response.Content.ReadAsStringAsync()
-                .GetAwaiter().GetResult();
+            // Read and parse the response from the Azure Function
+            var resultJson = response.Content
+                .ReadAsStringAsync().GetAwaiter().GetResult();
 
-            var resultObj = JsonConvert.DeserializeObject<Dictionary<string,
-                object>>(resultJson);
+            var resultObj = JsonConvert.DeserializeObject<
+                Dictionary<string, object>>(resultJson);
 
             if (resultObj.TryGetValue("results", out var rawResults) &&
                 rawResults is JArray jResults)
             {
-                var results = jResults.Select(x => x.ToString()).ToArray();
+                var results = jResults.Select(x => x.ToString())
+                    .ToArray();
+
+                // Log or process the results as needed
                 foreach (var result in results)
                 {
-                    Console.WriteLine(result); // Replace with real logic
+                    // Example: Log each result (replace with actual logic)
+                    Console.WriteLine(result);
                 }
             }
         }
         catch (Exception ex)
         {
-            throw new InvalidPluginExecutionException($"An error occurred:
-                {ex.Message}", ex);
+            throw new InvalidPluginExecutionException(
+                $"An error occurred: {ex.Message}", ex);
         }
     }
 }
