@@ -7,8 +7,8 @@ a major limitation: **the Dataverse plugin sandbox does not reliably support
 asynchronous execution**. While it's technically possible to use `async/await`
 or `Task.Run`, doing so within the sandbox is risky and unsupported. These
 approaches may appear to work in development or isolated cases, but they often
-result in unpredictable behavior — such as deadlocks, thread aborts, or
-context corruption — especially under load.
+result in unpredictable behavior, such as deadlocks, thread aborts, or
+context corruption. Especially under load.
 
 Because all plugin code must be **synchronous** and complete within its
 execution time limits, scenarios that would benefit from parallelism — like
@@ -17,15 +17,15 @@ implement directly in the plugin.
 
 ## Solution: Async Work via Azure Functions
 
-To work around this limitation, we can use an **Azure Function as an
-asynchronous sidecar**. This function handles concurrent tasks (like multiple
-API calls), while the plugin remains completely synchronous. The plugin sends a
-payload to the function, blocks synchronously for the result, and then continues
-with normal logic.
+To work around this limitation, we can use an Azure Function to handle the
+parallelism. This function handles concurrent tasks (like multiple API calls),
+while the plugin remains completely synchronous. The plugin sends a payload to
+the function, blocks synchronously for the result, and then continues with
+normal logic.
 
-> ⚠️ Although the plugin **blocks** while waiting for the Azure Function, the
-> function itself performs the async fan-out and waits for all tasks to complete
-> — thus delivering parallelism without violating plugin constraints.
+> An Azure Function is used in this example, but it could be anything that
+> supports asynchronous operations and can be called synchronously from the
+> plugin.
 
 ## Plugin Code (SyncPlugin.cs)
 
@@ -167,32 +167,10 @@ public async Task<IActionResult> Run(
 }
 ```
 
----
-
-## Best Practices
-
-- **Never call external services directly from the plugin** unless you’re sure
-  they are fast and deterministic.
-- **Use HttpClient responsibly** — don’t instantiate it per request in the Azure
-  Function.
-- **Handle all errors explicitly** and log them.
-- **Validate the incoming payload carefully**.
-- **Use dependency injection** in your Azure Function for logging and
-  `HttpClient` reuse.
-
----
-
 ## Summary
 
 Yes — it’s possible to get asynchronous behavior inside a synchronous Dataverse
-plugin. You just need to **cheat a little**, by offloading the async work to
-something that’s allowed to `await`. In this case, that something is an Azure
-Function running in parallel and returning its result synchronously to the
-plugin.
-
-This is not only a clever hack — it’s often a real-world necessity.
-
----
-
-> 🧪 Use this responsibly. You’re still within the plugin timeout window and
-> relying on external availability.
+plugin. You just need to offload the parallel work to something that’s allowed
+to perform threading and asynchronous operations. In this case, that something
+is an Azure Function (but again - it does not have to be), which can run the
+workload in parallel and return the result synchronously to the plugin.
