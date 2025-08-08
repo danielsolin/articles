@@ -1,4 +1,4 @@
-# Asynchronous Synchronous Plugins
+# Asynchronous Synchronous Dynamics 365 Plugins
 
 ## Problem: The Synchronous Wall in Dynamics 365 Plugins
 
