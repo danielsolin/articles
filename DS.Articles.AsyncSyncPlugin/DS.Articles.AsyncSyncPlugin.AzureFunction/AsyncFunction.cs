@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using System.Net.Http;
 
 namespace DS.Articles.AsyncSyncPlugin.AzureFunction
 {

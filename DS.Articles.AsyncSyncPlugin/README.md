@@ -172,5 +172,5 @@ public async Task<IActionResult> Run(
 Yes — it’s possible to get asynchronous behavior inside a synchronous Dataverse
 plugin. You just need to offload the parallel work to something that’s allowed
 to perform threading and asynchronous operations. In this case, that something
-is an Azure Function (but again - it does not have to be), which can run the
-workload in parallel and return the result synchronously to the plugin.
+is an Azure Function (but again - it could be something else), which can run
+the workload in parallel and return the result synchronously to the plugin.
